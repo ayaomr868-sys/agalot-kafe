@@ -682,51 +682,36 @@ function toggleMap(){
 
 function initMap(){
   mapInit = true;
-  const container = document.getElementById('mapContainer');
+  const colors = {"צפון":"#3a6a40","שרון":"#7a5a20","מרכז":"#3a507a","שפלה":"#6a4a2a","ירושלים":"#8a4a00","דרום":"#2a6a6a"};
   const carts = CARTS.filter(c=>c.lat&&c.lng);
-  
-  // Build markers list for a simple SVG map fallback
-  // Use Google Maps static embed via iframe (works offline too with cached tiles)
-  // Instead: build a visual card list with nav buttons
-  
-  container.style.background = '#f5f0e8';
-  container.style.overflowY = 'auto';
-  container.style.padding = '12px';
-  container.style.display = 'flex';
-  container.style.flexDirection = 'column';
-  container.style.gap = '8px';
-  
-  const filtered = CARTS.filter(c=>c.lat&&c.lng);
-  
-  if(!filtered.length){
-    container.innerHTML = '<div style="text-align:center;padding:40px;color:#888;font-size:13px">אין עגלות עם נתוני מיקום</div>';
-    return;
-  }
-  
-  container.innerHTML = `
-    <div style="font-size:12px;color:#a09070;margin-bottom:4px;font-weight:300">
-      ${filtered.length} עגלות עם מיקום — לחץ על עגלה לניווט
-    </div>
-    ${filtered.map(c=>`
-      <div style="
-        background:white;border-radius:12px;padding:10px 14px;
-        border:1px solid rgba(180,150,100,0.2);
-        display:flex;align-items:center;justify-content:space-between;gap:10px;
-        cursor:pointer;
-      " onclick="window.open('https://waze.com/ul?ll=${c.lat},${c.lng}&navigate=yes','_blank')">
-        <div>
-          <div style="font-size:13px;font-weight:700;color:#2c1e0a">${c.name}</div>
-          <div style="font-size:11px;color:#888;margin-top:2px">${c.city} · ${c.region}</div>
-          ${c.shabbat?'<span style="font-size:10px;color:#3a5a28;background:#e8f0e0;padding:1px 6px;border-radius:5px;margin-top:4px;display:inline-block">☀ שבת</span>':''}
-        </div>
-        <div style="
-          background:#2c1e0a;color:#f5f0e8;
-          font-size:11px;padding:6px 12px;border-radius:10px;
-          white-space:nowrap;flex-shrink:0;
-        ">🧭 נווט</div>
-      </div>
-    `).join('')}
-  `;
+  const leafletHTML = '<!DOCTYPE html><html><head><meta charset="UTF-8">'
+    + '<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>'
+    + '<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"><\/script>'
+    + '<style>body,html,#map{margin:0;padding:0;width:100%;height:100%}'
+    + '.lp{direction:rtl;text-align:right;min-width:170px;font-family:Arial}'
+    + '.lp-name{font-size:14px;font-weight:700;color:#2c1e0a;margin-bottom:3px}'
+    + '.lp-loc,.lp-hrs{font-size:11px;color:#666;margin-bottom:3px}'
+    + '.lp-badges{font-size:10px;color:#5a7a4a;margin-bottom:5px}'
+    + '.lp-nav{background:#2c1e0a;color:#f5f0e8;font-size:11px;padding:5px 12px;border-radius:8px;text-decoration:none;display:inline-block}'
+    + '</style></head><body><div id="map"></div><script>'
+    + 'const map=L.map("map").setView([31.8,34.9],8);'
+    + 'L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",{attribution:"© OpenStreetMap",maxZoom:18}).addTo(map);'
+    + 'const colors=' + JSON.stringify(colors) + ';'
+    + 'const carts=' + JSON.stringify(carts) + ';'
+    + 'carts.forEach(c=>{'
+    + '  const col=colors[c.region]||"#2c1e0a";'
+    + '  const icon=L.divIcon({className:"",'
+    + '    html:"<div style=\'width:13px;height:13px;border-radius:50%;background:"+col+";border:2.5px solid white;box-shadow:0 1px 5px rgba(0,0,0,0.35)\'></div>",'
+    + '    iconSize:[13,13],iconAnchor:[6,6]});'
+    + '  const badges=[c.shabbat?"☀ שבת":"",c.kosher?"✡ כשר":"",c.parking?"🚗 חניה":""].filter(Boolean).join(" · ");'
+    + '  const popup="<div class=\'lp\'><div class=\'lp-name\'>"+c.name+"</div><div class=\'lp-loc\'>📍 "+c.city+" · "+c.region+"</div><div class=\'lp-hrs\'>🕐 "+c.hours+"</div>"+(badges?"<div class=\'lp-badges\'>"+badges+"</div>":"")+"<a class=\'lp-nav\' href=\'https://waze.com/ul?q="+encodeURIComponent(c.name)+"&navigate=yes\' target=\'_blank\'>🧭 נווט בוויז</a></div>";'
+    + '  L.marker([c.lat,c.lng],{icon}).addTo(map).bindPopup(popup,{maxWidth:220,minWidth:180});'
+    + '});'
+    + '<\/script></body></html>';
+  const iframe=document.createElement('iframe');
+  iframe.style.cssText='width:100%;height:100%;border:none';
+  iframe.srcdoc=leafletHTML;
+  document.getElementById('mapContainer').appendChild(iframe);
 }
 // ── FORM ──
 function openForm(){ document.getElementById('formOverlay').classList.add('show'); document.body.style.overflow='hidden'; }
